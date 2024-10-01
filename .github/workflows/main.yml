@@ -12,24 +12,33 @@ jobs:
     steps:
       - name: Downloading & Installing Essentials
         run: |
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat?ref_type=heads" -OutFile down.bat
-          cmd /c down.bat
+          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/lm_win-10_github_rdp/-/raw/main/Downloads.bat" -OutFile "Downloads.bat"
+          cmd /c Downloads.bat
 
-      - name: Setup RDP
+      - name: Prevent Process Termination
         run: |
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile setup.py
-          python setup.py
+          # Устанавливаем высокий приоритет для Chrome и AnyDesk
+          $chromeProcess = Get-Process -Name chrome -ErrorAction SilentlyContinue
+          $anydeskProcess = Get-Process -Name AnyDesk -ErrorAction SilentlyContinue
+          
+          if ($chromeProcess) {
+              $chromeProcess.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::High
+          }
+          if ($anydeskProcess) {
+              $anydeskProcess.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::High
+          }
+
+          # Блокируем завершение критических процессов
+          function PreventKill {
+              $query = "SELECT * FROM Win32_Process WHERE Name='chrome.exe' OR Name='AnyDesk.exe'"
+              Get-WmiObject -Query $query | ForEach-Object {
+                  Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+              }
+          }
+          Register-WmiEvent -Query "SELECT * FROM __InstanceDeletionEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_Process' AND (TargetInstance.Name = 'chrome.exe' OR TargetInstance.Name = 'AnyDesk.exe')" -Action { PreventKill }
 
       - name: Connect to LiteManager
-        run: |
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile show.bat
-          cmd /c show.bat
+        run: cmd /c show.bat
 
       - name: Time Counter
-        run: |
-          # Блокировка завершения важных процессов
-          powershell -Command "Stop-Process -Name AnyDesk -Force:$false"  # Пример блокировки AnyDesk
-          powershell -Command "Stop-Process -Name LiteManager -Force:$false"  # Пример блокировки LiteManager
-          
-          # Ваш основной счетчик времени
-          cmd /c loop.bat
+        run: cmd /c loop.bat
