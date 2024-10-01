@@ -1,37 +1,33 @@
-name: macOS - AnyDesk Setup
+name: macos-setup
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
-  setup:
-    name: Setup macOS Runner with AnyDesk
-    runs-on: macos-15-large
-    timeout-minutes: 9999
-
+  setup-runner:
+    runs-on: macos-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Install Homebrew
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          
-      - name: Install AnyDesk
-        run: |
-          brew install --cask anydesk
 
-      - name: Start AnyDesk
+      - name: Tap AnyDesk repository (if available)
+        run: brew tap anydesk/tap
+
+      - name: Install AnyDesk
+        run: brew install anydesk
+
+      - name: Run AnyDesk and fetch ID
         run: |
           open -a AnyDesk
+          sleep 10
+          anydesk --get-id > anydesk-id.txt
+          cat anydesk-id.txt
 
-      - name: Wait for AnyDesk to start
-        run: sleep 30  # Даем время AnyDesk на запуск
-
-      - name: Print AnyDesk ID
-        run: |
-          # Получаем ID AnyDesk
-          ANYDESK_ID=$(osascript -e 'tell application "AnyDesk" to return anydesk id')
-          echo "AnyDesk ID: $ANYDESK_ID"
-          
-      - name: Keep the job running
-        run: |
-          echo "You can connect to the AnyDesk session using the printed ID."
-          while true; do sleep 30; done # Держит задачу активной, чтобы вы могли подключиться
+      - name: Sleep for 6 hours
+        run: sleep 21600
