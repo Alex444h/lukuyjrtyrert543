@@ -27,10 +27,17 @@ jobs:
           sudo cp -R /Volumes/AnyDesk/AnyDesk.app /Applications/
           hdiutil detach /Volumes/AnyDesk
 
-      - name: Get AnyDesk Logs and Configurations
+      - name: Run AnyDesk to Initialize
         run: |
-          echo "Список содержимого домашней директории AnyDesk для поиска возможных конфигурационных файлов:"
-          ls -R "$HOME/Library/Application Support/AnyDesk"
+          echo "Запуск AnyDesk для инициализации конфигурации..."
+          open -a /Applications/AnyDesk.app || true
+          sleep 10
+          osascript -e 'tell application "AnyDesk" to quit' || true
+
+      - name: Find AnyDesk Configurations
+        run: |
+          echo "Поиск возможных конфигурационных файлов AnyDesk:"
+          find "$HOME/Library" -name "*AnyDesk*" -print
 
       - name: Verify Installation
         run: ls /Applications
