@@ -7,24 +7,29 @@ jobs:
   build:
     name: Start Building...
     runs-on: windows-latest
-    timeout-minutes: 1920
+    timeout-minutes: 9999
 
     steps:
       - name: Downloading & Installing Essentials
         run: |
           # Скачиваем и сохраняем файл down.bat
           Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat?ref_type=heads" -OutFile "down.bat"
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешность скачивания
           # Выполняем скачанный файл
           cmd /c down.bat
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное выполнение
 
       - name: Install NSSM (Non-Sucking Service Manager)
         run: |
           # Скачиваем nssm для управления службами
           Invoke-WebRequest -Uri "https://nssm.cc/release/nssm-2.24.zip" -OutFile "nssm.zip"
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешность скачивания
           # Распаковываем архив
           Expand-Archive -Path "nssm.zip" -DestinationPath "C:\nssm"
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное распаковку
           # Перемещаем nssm.exe в папку для запуска из любого места
           Copy-Item "C:\nssm\nssm-2.24\win64\nssm.exe" -Destination "C:\Windows\System32\"
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное копирование
 
       - name: Create PowerShell script for process protection
         run: |
@@ -85,10 +90,14 @@ jobs:
         run: |
           # Скачиваем и запускаем setup.py
           Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile "setup.py"
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешность скачивания
           python setup.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное выполнение
 
       - name: Connect to LiteManager
         run: |
           # Скачиваем и запускаем show.bat
           Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile "show.bat"
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешность скачивания
           cmd /c show.bat
+          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное выполнение
