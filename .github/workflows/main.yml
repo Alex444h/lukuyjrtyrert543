@@ -12,8 +12,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Make setup.sh executable
-      run: chmod +x setup.sh
+    - name: Create setup.sh script (if not in the repo yet)
+      run: |
+        echo '#!/bin/bash' > setup.sh
+        echo 'set -e' >> setup.sh
+        echo 'set -x' >> setup.sh
+        echo 'if [ -z "$3" ]; then echo "Error: NGROK_AUTH_TOKEN is not provided."; exit 1; fi' >> setup.sh
+        echo 'USER1=$1; USER2=$2; NGROK_AUTH_TOKEN=$3' >> setup.sh
+        echo 'echo "Authenticating ngrok..."; ngrok authtoken $NGROK_AUTH_TOKEN' >> setup.sh
+        echo 'echo "Setting up for user: $USER1 and $USER2"' >> setup.sh
+        chmod +x setup.sh
 
     - name: Set up the environment
       env:
