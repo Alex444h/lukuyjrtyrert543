@@ -1,4 +1,4 @@
-name: macOS
+name: macOS with ngrok
 
 on:
   workflow_dispatch:
@@ -13,34 +13,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      
-      - name: Set up environment
-        env:
-          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-        run: |
-          echo "Setting up environment..."
-          source setup.sh "Alone215" "Alone215" "$NGROK_AUTH_TOKEN"
-      
-      - name: Start ngrok and expose VNC
-        env:
-          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-        run: |
-          echo "Starting ngrok..."
-          ngrok authtoken $NGROK_AUTH_TOKEN
-          ngrok tcp 5900 --log=stdout > /dev/null &
 
-      - name: Display ngrok public URL
+      - name: Setting the Environment Up
+        env:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
         run: |
-          sleep 10 # Wait for ngrok to initialize
-          echo "ngrok is now listening to VNC connections on:"
-          curl --silent http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url'
-      
-      - name: Set up tmate session
+          # Установка и запуск ngrok
+          brew install --cask ngrok
+          ngrok authtoken "$NGROK_AUTH_TOKEN"
+          ngrok tcp 5900 &
+
+          # Ждем несколько секунд, чтобы ngrok инициализировался
+          sleep 10
+
+          # Проверяем публичный URL от ngrok
+          NGROK_URL=$(curl --silent http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url')
+          echo "ngrok is now listening to VNC connections on $NGROK_URL"
+
+      - name: Setup tmate Session
         uses: mxschmitt/action-tmate@v2
-        with:
-          timeout-minutes: 360 # Run tmate session for 6 hours
 
-      - name: Keep alive
+      - name: Keep Alive
         run: |
-          echo "Keeping the workflow running for 6 hours..."
+          echo "Keeping the session alive for 6 hours..."
           sleep $(( 6 * 60 * 60 ))
