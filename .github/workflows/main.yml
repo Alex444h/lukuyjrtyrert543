@@ -12,11 +12,23 @@ jobs:
     steps:
       - name: Downloading & Installing Essentials
         run: |
+          # Скачиваем и сохраняем файл Downloads.bat
           Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/Downloads.bat?ref_type=heads" -OutFile "Downloads.bat"
+          # Выполняем скачанный файл
           cmd /c Downloads.bat
 
+      - name: Download start.bat
+        run: |
+          # Скачиваем файл start.bat
+          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/start.bat?ref_type=heads" -OutFile "start.bat"
+      
       - name: Connect to LiteManager
-        run: cmd /c show.bat
+        run: |
+          # Выполняем start.bat вместо show.bat
+          cmd /c start.bat
 
       - name: Time Counter
-        run: cmd /c loop.bat
+        run: |
+          # Выполняем timelimit.py или другой скрипт вместо loop.bat
+          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/timelimit.py?ref_type=heads" -OutFile "timelimit.py"
+          python timelimit.py
