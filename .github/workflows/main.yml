@@ -12,35 +12,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install Homebrew
+      - name: Start SSH server
         run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-
-      - name: Download AnyDesk
-        run: curl -o anydesk.dmg -L "https://download.anydesk.com/anydesk.dmg"
-
-      - name: Mount and Install AnyDesk
+          echo "Starting SSH server..."
+          sudo systemsetup -setremotelogin on
+          sudo mkdir -p /etc/ssh
+          sudo touch /etc/ssh/sshd_config
+          echo "Port 2222" | sudo tee -a /etc/ssh/sshd_config
+          sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist
+          
+      - name: Generate SSH Key
         run: |
-          hdiutil attach anydesk.dmg
-          sudo cp -R /Volumes/AnyDesk/AnyDesk.app /Applications/
-          hdiutil detach /Volumes/AnyDesk
-
-      - name: Run AnyDesk to Initialize
-        run: |
-          echo "Запуск AnyDesk для инициализации конфигурации..."
-          open -a /Applications/AnyDesk.app || true
-          sleep 10
-          osascript -e 'tell application "AnyDesk" to quit' || true
-
-      - name: Find AnyDesk Configurations
-        run: |
-          echo "Поиск возможных конфигурационных файлов AnyDesk:"
-          find "$HOME/Library" -name "*AnyDesk*" -print
-
-      - name: Verify Installation
-        run: ls /Applications
+          ssh-keygen -t rsa -b 2048 -f ~/macos_runner_key -N ""
+          echo "SSH Public Key:"
+          cat ~/macos_runner_key.pub
+          echo "Add this public key to your authorized keys in target Windows machine or any other machine for access."
 
       - name: Keep the runner alive
-        run: sleep 21600  # Sleep for 6 hours
+        run: |
+          echo "Runner is alive... SSH into it using private key"
+          sleep 21600  # Sleep for 6 hours
+
+      - name: Output SSH Connection Details
+        run: echo "Connect with: ssh -i ~/macos_runner_key -p 2222 <username>@<runner-ip>"
+
+      - name: Display IP Address
+        run: |
+          IP=$(ipconfig getifaddr en0)
+          echo "Connect to this IP Address: $IP"
