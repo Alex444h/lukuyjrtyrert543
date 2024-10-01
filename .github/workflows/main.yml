@@ -1,6 +1,8 @@
 name: macOS
+
 on:
   workflow_dispatch:
+
 defaults:
   run:
     shell: bash
@@ -9,29 +11,36 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Set up environment
+        env:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+        run: |
+          echo "Setting up environment..."
+          source setup.sh "Alone215" "Alone215" "$NGROK_AUTH_TOKEN"
+      
+      - name: Start ngrok and expose VNC
+        env:
+          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+        run: |
+          echo "Starting ngrok..."
+          ngrok authtoken $NGROK_AUTH_TOKEN
+          ngrok tcp 5900 --log=stdout > /dev/null &
 
-    - name: Create setup.sh script (if not in the repo yet)
-      run: |
-        echo '#!/bin/bash' > setup.sh
-        echo 'set -e' >> setup.sh
-        echo 'set -x' >> setup.sh
-        echo 'if [ -z "$3" ]; then echo "Error: NGROK_AUTH_TOKEN is not provided."; exit 1; fi' >> setup.sh
-        echo 'USER1=$1; USER2=$2; NGROK_AUTH_TOKEN=$3' >> setup.sh
-        echo 'echo "Authenticating ngrok..."; ngrok authtoken $NGROK_AUTH_TOKEN' >> setup.sh
-        echo 'echo "Setting up for user: $USER1 and $USER2"' >> setup.sh
-        chmod +x setup.sh
+      - name: Display ngrok public URL
+        run: |
+          sleep 10 # Wait for ngrok to initialize
+          echo "ngrok is now listening to VNC connections on:"
+          curl --silent http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url'
+      
+      - name: Set up tmate session
+        uses: mxschmitt/action-tmate@v2
+        with:
+          timeout-minutes: 360 # Run tmate session for 6 hours
 
-    - name: Set up the environment
-      env:
-        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-      run: |
-        ./setup.sh "Alone215" "Alone215" "$NGROK_AUTH_TOKEN"
-
-    - name: ngrok is now listening to VNC connections on...
-      run: |
-        curl --silent http://127.0.0.1:4040/api/tunnels | jq '.tunnels[0].public_url'
-
-    - name: Setup tmate Session
-      uses: mxschmitt/action-tmate@v2
+      - name: Keep alive
+        run: |
+          echo "Keeping the workflow running for 6 hours..."
+          sleep $(( 6 * 60 * 60 ))
