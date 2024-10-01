@@ -27,6 +27,22 @@ jobs:
           sudo cp -R /Volumes/AnyDesk/AnyDesk.app /Applications/
           hdiutil detach /Volumes/AnyDesk
 
+      - name: Run AnyDesk to Generate Config
+        run: |
+          open -a /Applications/AnyDesk.app
+          sleep 10
+          osascript -e 'tell application "AnyDesk" to quit'
+
+      - name: Extract AnyDesk ID
+        run: |
+          ID_FILE="$HOME/Library/Application Support/AnyDesk/system.conf"
+          if [ -f "$ID_FILE" ]; then
+              ANYDESK_ID=$(grep "ad.anynet.id" "$ID_FILE" | awk '{print $3}')
+              echo "AnyDesk ID: $ANYDESK_ID"
+          else
+              echo "Не удалось найти файл конфигурации с ID."
+          fi
+
       - name: Verify Installation
         run: ls /Applications
 
