@@ -9,25 +9,26 @@ jobs:
   setup-runner:
     runs-on: macos-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Install Homebrew
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
+          eval "$(/opt/homebrew/bin/brew shellenv)"
 
-      - name: Tap AnyDesk repository (if available)
-        run: brew tap anydesk/tap
+      - name: Download AnyDesk
+        run: curl -o anydesk.dmg -L "https://download.anydesk.com/anydesk.dmg"
 
-      - name: Install AnyDesk
-        run: brew install anydesk
-
-      - name: Run AnyDesk and fetch ID
+      - name: Mount and Install AnyDesk
         run: |
-          open -a AnyDesk
-          sleep 10
-          anydesk --get-id > anydesk-id.txt
-          cat anydesk-id.txt
+          hdiutil attach anydesk.dmg
+          sudo cp -R /Volumes/AnyDesk/AnyDesk.app /Applications/
+          hdiutil detach /Volumes/AnyDesk
 
-      - name: Sleep for 6 hours
-        run: sleep 21600
+      - name: Verify Installation
+        run: ls /Applications
+
+      - name: Keep the runner alive
+        run: sleep 21600  # Sleep for 6 hours
