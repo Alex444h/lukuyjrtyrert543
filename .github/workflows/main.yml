@@ -14,26 +14,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Setting the Environment Up
+      - name: Install ngrok and setup VNC
         env:
           NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
         run: |
-          # Установка и запуск ngrok
           brew install --cask ngrok
           ngrok authtoken "$NGROK_AUTH_TOKEN"
-          ngrok tcp 5900 &
+          screen -d -m ngrok tcp 5900  # Запустить ngrok в фоне
+          sleep 5                      # Ждем, пока ngrok запустится
+          echo "Ngrok is listening on:"
+          curl --silent http://127.0.0.1:4040/api/tunnels
 
-          # Ждем несколько секунд, чтобы ngrok инициализировался
-          sleep 10
-
-          # Проверяем публичный URL от ngrok
-          NGROK_URL=$(curl --silent http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url')
-          echo "ngrok is now listening to VNC connections on $NGROK_URL"
-
-      - name: Setup tmate Session
+      - name: Setup tmate session
         uses: mxschmitt/action-tmate@v2
+        with:
+          limit-access-to-actor: true  # Добавление опции ограничения доступа по актору
 
-      - name: Keep Alive
+      - name: Keep session alive
         run: |
-          echo "Keeping the session alive for 6 hours..."
-          sleep $(( 6 * 60 * 60 ))
+          echo "Session is kept alive for 6 hours"
+          sleep $((6 * 60 * 60))
