@@ -12,11 +12,14 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Make setup.sh executable
+      run: chmod +x setup.sh
+
     - name: Set up the environment
       env:
         NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
       run: |
-        source setup.sh "Alone215" "Alone215" "$NGROK_AUTH_TOKEN"
+        ./setup.sh "Alone215" "Alone215" "$NGROK_AUTH_TOKEN"
 
     - name: ngrok is now listening to VNC connections on...
       run: |
