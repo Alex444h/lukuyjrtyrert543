@@ -1,42 +1,20 @@
-name: macos-setup
-
+name: macOS
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  setup-runner:
+  build:
     runs-on: macos-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Start SSH server
-        run: |
-          echo "Starting SSH server..."
-          sudo systemsetup -setremotelogin on
-          sudo mkdir -p /etc/ssh
-          sudo touch /etc/ssh/sshd_config
-          echo "Port 2222" | sudo tee -a /etc/ssh/sshd_config
-          sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist
-          
-      - name: Generate SSH Key
-        run: |
-          ssh-keygen -t rsa -b 2048 -f ~/macos_runner_key -N ""
-          echo "SSH Public Key:"
-          cat ~/macos_runner_key.pub
-          echo "Add this public key to your authorized keys in target Windows machine or any other machine for access."
-
-      - name: Keep the runner alive
-        run: |
-          echo "Runner is alive... SSH into it using private key"
-          sleep 21600  # Sleep for 6 hours
-
-      - name: Output SSH Connection Details
-        run: echo "Connect with: ssh -i ~/macos_runner_key -p 2222 <username>@<runner-ip>"
-
-      - name: Display IP Address
-        run: |
-          IP=$(ipconfig getifaddr en0)
-          echo "Connect to this IP Address: $IP"
+    - uses: actions/checkout@v2
+      name: Setting the Environment Up.
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+      run: source setup.sh "Alone215" "Alone215" "$NGROK_AUTH_TOKEN"
+    - name: ngrok is now listening to VNC connections on...
+      run: curl --silent http://127.0.0.1:4040/api/tunnels | jq '.tunnels[0].public_url'
+    - name: Setup tmate Session
+      uses: mxschmitt/action-tmate@v2
