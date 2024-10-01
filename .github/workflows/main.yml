@@ -29,13 +29,16 @@ jobs:
 
       - name: Run AnyDesk and Extract ID
         run: |
-          # Запускаем AnyDesk и получаем ID
+          # Трассировка для отладки
+          echo "Пробуем запустить AnyDesk для получения ID..."
           ANYDESK_PATH="/Applications/AnyDesk.app/Contents/MacOS/AnyDesk"
           if [ -x "$ANYDESK_PATH" ]; then
-              ANYDESK_ID=$("$ANYDESK_PATH" --get-id)
+              echo "Исполняемый файл найден, пробуем получить ID..."
+              ANYDESK_ID=$("$ANYDESK_PATH" --get-id) || { echo "Ошибка получения ID"; exit 1; }
               echo "AnyDesk ID: $ANYDESK_ID"
           else
               echo "Не удалось найти исполняемый файл AnyDesk."
+              exit 1
           fi
 
       - name: Verify Installation
