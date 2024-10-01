@@ -1,36 +1,54 @@
-name: macOS with ngrok
+name: Namar - Tavan
 
 on:
   workflow_dispatch:
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
   build:
-    runs-on: macos-latest
+    name: Start Building...
+    runs-on: windows-latest
+    timeout-minutes: 9999
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install ngrok and setup VNC
-        env:
-          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+      - name: Downloading & Installing Essentials
         run: |
-          brew install --cask ngrok
-          ngrok authtoken "$NGROK_AUTH_TOKEN"
-          screen -d -m ngrok tcp 5900  # Запустить ngrok в фоне
-          sleep 5                      # Ждем, пока ngrok запустится
-          echo "Ngrok is listening on:"
-          curl --silent http://127.0.0.1:4040/api/tunnels
+          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/lm_win-10_github_rdp/-/raw/main/Downloads.bat" -OutFile "Downloads.bat"
+          cmd /c Downloads.bat
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
-        with:
-          limit-access-to-actor: true  # Добавление опции ограничения доступа по актору
-
-      - name: Keep session alive
+      - name: Setup Process Protection
         run: |
-          echo "Session is kept alive for 6 hours"
-          sleep $((6 * 60 * 60))
+          # Создаем и запускаем скрипт для защиты процессов
+          $protectionScript = @"
+          while ($true) {
+            # Защита AnyDesk
+            $anydeskProcess = Get-Process -Name "anydesk" -ErrorAction SilentlyContinue
+            if (-not $anydeskProcess) {
+              Start-Process "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
+            }
+            
+            # Защита всех процессов от завершения
+            Get-Process | ForEach-Object {
+              $_.PriorityClass = 'High'
+              $acl = Get-Acl -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$($_.Name)"
+              $rule = New-Object System.Security.AccessControl.RegistryAccessRule("Everyone","FullControl","Allow")
+              $acl.SetAccessRule($rule)
+              Set-Acl -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$($_.Name)" -AclObject $acl
+            }
+            
+            # Защита сервисов
+            Get-Service | ForEach-Object {
+              Set-Service -Name $_.Name -StartupType Automatic
+              Start-Service -Name $_.Name -ErrorAction SilentlyContinue
+            }
+            
+            Start-Sleep -Seconds 5
+          }
+          "@
+          $protectionScript | Out-File -FilePath "C:\protection.ps1"
+          Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File C:\protection.ps1" -WindowStyle Hidden
+
+      - name: Connect to LiteManager
+        run: cmd /c show.bat
+
+      - name: Time Counter
+        run: cmd /c loop.bat
