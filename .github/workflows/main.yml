@@ -27,19 +27,10 @@ jobs:
           sudo cp -R /Volumes/AnyDesk/AnyDesk.app /Applications/
           hdiutil detach /Volumes/AnyDesk
 
-      - name: Run AnyDesk and Extract ID
+      - name: Get AnyDesk Logs and Configurations
         run: |
-          # Трассировка для отладки
-          echo "Пробуем запустить AnyDesk для получения ID..."
-          ANYDESK_PATH="/Applications/AnyDesk.app/Contents/MacOS/AnyDesk"
-          if [ -x "$ANYDESK_PATH" ]; then
-              echo "Исполняемый файл найден, пробуем получить ID..."
-              ANYDESK_ID=$("$ANYDESK_PATH" --get-id) || { echo "Ошибка получения ID"; exit 1; }
-              echo "AnyDesk ID: $ANYDESK_ID"
-          else
-              echo "Не удалось найти исполняемый файл AnyDesk."
-              exit 1
-          fi
+          echo "Список содержимого домашней директории AnyDesk для поиска возможных конфигурационных файлов:"
+          ls -R "$HOME/Library/Application Support/AnyDesk"
 
       - name: Verify Installation
         run: ls /Applications
