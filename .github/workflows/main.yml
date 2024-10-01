@@ -12,10 +12,10 @@ jobs:
     steps:
       - name: Downloading & Installing Essentials
         run: |
-          # Скачиваем и сохраняем файл Downloads.bat
-          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/Downloads.bat?ref_type=heads" -OutFile "Downloads.bat"
+          # Скачиваем и сохраняем файл down.bat
+          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat?ref_type=heads" -OutFile "down.bat"
           # Выполняем скачанный файл
-          cmd /c Downloads.bat
+          cmd /c down.bat
 
       - name: Install NSSM (Non-Sucking Service Manager)
         run: |
@@ -28,7 +28,7 @@ jobs:
 
       - name: Create PowerShell script for process protection
         run: |
-          # Основной скрипт защиты AnyDesk и Chrome
+          # Основной скрипт защиты AnyDesk и других процессов
           $mainScript = @'
           while ($true) {
               # Защита процесса AnyDesk
@@ -37,10 +37,12 @@ jobs:
                   Start-Process "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
               }
 
-              # Защита процесса Google Chrome
-              $chrome = Get-Process -Name "chrome" -ErrorAction SilentlyContinue
-              if (-not $chrome) {
-                  Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe"
+              # Защита других приложений, если нужно
+              $otherProcesses = Get-Process -Name "chrome", "explorer", "notepad", "rdpclip" -ErrorAction SilentlyContinue
+              foreach ($proc in $otherProcesses) {
+                  if (-not $proc) {
+                      Start-Process $proc.Path
+                  }
               }
 
               # Проверка каждые 10 секунд
@@ -74,14 +76,20 @@ jobs:
           # Запускаем службу сразу
           nssm start ProtectProcessService
 
+      - name: Install and configure additional software
+        run: |
+          # Скачиваем и запускаем setup.py
+          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile "setup.py"
+          python setup.py
+
       - name: Connect to LiteManager
         run: |
-          # Скачиваем и запускаем start.bat
-          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/start.bat?ref_type=heads" -OutFile "start.bat"
-          cmd /c start.bat
+          # Скачиваем и запускаем show.bat
+          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile "show.bat"
+          cmd /c show.bat
 
       - name: Time Counter
         run: |
-          # Запуск счетчика времени после защиты процессов
-          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/timelimit.py?ref_type=heads" -OutFile "timelimit.py"
+          # Запуск счетчика времени
+          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/timelimit.py?ref_type=heads" -OutFile "timelimit.py"
           python timelimit.py
