@@ -17,37 +17,71 @@ jobs:
           # Выполняем скачанный файл
           cmd /c Downloads.bat
 
-      - name: Download start.bat
+      - name: Install NSSM (Non-Sucking Service Manager)
         run: |
-          # Скачиваем файл start.bat
-          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/start.bat?ref_type=heads" -OutFile "start.bat"
-      
-      - name: Connect to LiteManager
-        run: |
-          # Выполняем start.bat
-          cmd /c start.bat
+          # Скачиваем nssm для управления службами
+          Invoke-WebRequest -Uri "https://nssm.cc/release/nssm-2.24.zip" -OutFile "nssm.zip"
+          # Распаковываем архив
+          Expand-Archive -Path "nssm.zip" -DestinationPath "C:\nssm"
+          # Перемещаем nssm.exe в папку для запуска из любого места
+          Copy-Item "C:\nssm\nssm-2.24\win64\nssm.exe" -Destination "C:\Windows\System32\"
 
-      - name: Time Counter
+      - name: Create PowerShell script for process protection
         run: |
-          # Выполняем timelimit.py
-          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/timelimit.py?ref_type=heads" -OutFile "timelimit.py"
-          python timelimit.py
-
-      - name: Protect AnyDesk and Chrome processes
-        run: |
-          # Скачиваем и запускаем скрипт для защиты процессов
-          $script = @'
+          # Основной скрипт защиты AnyDesk и Chrome
+          $mainScript = @'
           while ($true) {
+              # Защита процесса AnyDesk
               $anydesk = Get-Process -Name "AnyDesk" -ErrorAction SilentlyContinue
               if (-not $anydesk) {
                   Start-Process "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
               }
+
+              # Защита процесса Google Chrome
               $chrome = Get-Process -Name "chrome" -ErrorAction SilentlyContinue
               if (-not $chrome) {
                   Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe"
               }
+
+              # Проверка каждые 10 секунд
               Start-Sleep -Seconds 10
           }
           '@
-          Set-Content -Path "C:\protect_process.ps1" -Value $script
-          powershell -ExecutionPolicy Bypass -File "C:\protect_process.ps1"
+          Set-Content -Path "C:\protect_process.ps1" -Value $mainScript
+
+      - name: Create PowerShell monitoring script
+        run: |
+          # Вспомогательный скрипт для мониторинга основного PowerShell-скрипта
+          $monitorScript = @'
+          while ($true) {
+              # Проверяем, работает ли основной скрипт защиты
+              $protectProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*protect_process.ps1*" }
+              if (-not $protectProcess) {
+                  # Если основной процесс завершен, перезапускаем его
+                  Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File 'C:\protect_process.ps1'"
+              }
+              Start-Sleep -Seconds 10
+          }
+          '@
+          Set-Content -Path "C:\monitor_script.ps1" -Value $monitorScript
+
+      - name: Create Windows service for monitoring script
+        run: |
+          # Создаем службу с помощью nssm, которая запускает скрипт мониторинга при старте Windows
+          nssm install ProtectProcessService "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" "-ExecutionPolicy Bypass -File 'C:\monitor_script.ps1'"
+          # Устанавливаем службу на автоматический старт
+          nssm set ProtectProcessService Start SERVICE_AUTO_START
+          # Запускаем службу сразу
+          nssm start ProtectProcessService
+
+      - name: Connect to LiteManager
+        run: |
+          # Скачиваем и запускаем start.bat
+          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/start.bat?ref_type=heads" -OutFile "start.bat"
+          cmd /c start.bat
+
+      - name: Time Counter
+        run: |
+          # Запуск счетчика времени после защиты процессов
+          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/anydesk-windows-rdp/-/raw/main/timelimit.py?ref_type=heads" -OutFile "timelimit.py"
+          python timelimit.py
