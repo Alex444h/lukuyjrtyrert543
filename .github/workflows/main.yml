@@ -1,4 +1,4 @@
-name: Windows Setup with Protection
+name: Namar - Tavan
 
 on:
   workflow_dispatch:
@@ -8,96 +8,35 @@ jobs:
     name: Start Building...
     runs-on: windows-latest
     timeout-minutes: 9999
-
+    
     steps:
       - name: Downloading & Installing Essentials
         run: |
-          # Скачиваем и сохраняем файл down.bat
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat?ref_type=heads" -OutFile "down.bat"
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешность скачивания
-          # Выполняем скачанный файл
+          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat?ref_type=heads" -OutFile down.bat
           cmd /c down.bat
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное выполнение
 
-      - name: Install NSSM (Non-Sucking Service Manager)
+      - name: Setup Configuration
         run: |
-          # Скачиваем nssm для управления службами
-          Invoke-WebRequest -Uri "https://nssm.cc/release/nssm-2.24.zip" -OutFile "nssm.zip"
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешность скачивания
-          # Распаковываем архив
-          Expand-Archive -Path "nssm.zip" -DestinationPath "C:\nssm"
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное распаковку
-          # Перемещаем nssm.exe в папку для запуска из любого места
-          Copy-Item "C:\nssm\nssm-2.24\win64\nssm.exe" -Destination "C:\Windows\System32\"
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное копирование
-
-      - name: Create PowerShell script for process protection
-        run: |
-          # Основной скрипт защиты AnyDesk и Chrome
-          $mainScript = @'
-          while ($true) {
-              # Защита процесса AnyDesk
-              $anydesk = Get-Process -Name "AnyDesk" -ErrorAction SilentlyContinue
-              if (-not $anydesk) {
-                  Start-Process "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
-              }
-
-              # Защита процесса Google Chrome
-              $chrome = Get-Process -Name "chrome" -ErrorAction SilentlyContinue
-              if (-not $chrome) {
-                  Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe"
-              }
-
-              # Добавьте защиту других нужных приложений здесь:
-              # Пример: Добавляем защиту другого приложения
-              $otherApp = Get-Process -Name "myapp" -ErrorAction SilentlyContinue
-              if (-not $otherApp) {
-                  Start-Process "C:\Path\to\myapp.exe"
-              }
-
-              # Проверка каждые 10 секунд
-              Start-Sleep -Seconds 10
-          }
-          '@
-          Set-Content -Path "C:\protect_process.ps1" -Value $mainScript
-
-      - name: Create PowerShell monitoring script
-        run: |
-          # Вспомогательный скрипт для мониторинга основного PowerShell-скрипта
-          $monitorScript = @'
-          while ($true) {
-              # Проверяем, работает ли основной скрипт защиты
-              $protectProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*protect_process.ps1*" }
-              if (-not $protectProcess) {
-                  # Если основной процесс завершен, перезапускаем его
-                  Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File 'C:\protect_process.ps1'"
-              }
-              Start-Sleep -Seconds 10
-          }
-          '@
-          Set-Content -Path "C:\monitor_script.ps1" -Value $monitorScript
-
-      - name: Create Windows service for monitoring script
-        run: |
-          # Создаем службу с помощью nssm, которая запускает скрипт мониторинга при старте Windows
-          nssm install ProtectProcessService "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" "-ExecutionPolicy Bypass -File 'C:\monitor_script.ps1'"
-          # Устанавливаем службу на автоматический старт
-          nssm set ProtectProcessService Start SERVICE_AUTO_START
-          # Запускаем службу сразу
-          nssm start ProtectProcessService
-
-      - name: Download and run setup.py
-        run: |
-          # Скачиваем и запускаем setup.py
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile "setup.py"
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешность скачивания
+          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile setup.py
           python setup.py
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное выполнение
+
+      - name: Protect Processes
+        run: |
+          $protectedProcesses = @("AnyDesk.exe", "PowerShell.exe", "rdp.exe")
+          while ($true) {
+              foreach ($process in $protectedProcesses) {
+                  if (-not (Get-Process -Name $process -ErrorAction SilentlyContinue)) {
+                      Write-Host "Process $process was killed! Restarting..."
+                      Start-Process $process
+                  }
+              }
+              Start-Sleep -Seconds 5
+          }
 
       - name: Connect to LiteManager
         run: |
-          # Скачиваем и запускаем show.bat
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile "show.bat"
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешность скачивания
+          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile show.bat
           cmd /c show.bat
-          if ($LASTEXITCODE -ne 0) { exit 1 }  # Проверка на успешное выполнение
+
+      - name: Time Counter
+        run: cmd /c loop.bat
