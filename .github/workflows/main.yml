@@ -15,7 +15,7 @@ jobs:
           # Проверяем наличие down.bat
           if (-not (Test-Path "down.bat")) {
             Write-Host "Downloading & Installing Essentials..."
-            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat?ref_type=heads" -OutFile "down.bat"
+            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat" -OutFile "down.bat"
           } else {
             Write-Host "Essentials already downloaded. Skipping download."
           }
@@ -27,7 +27,7 @@ jobs:
           # Проверяем наличие setup.py
           if (-not (Test-Path "setup.py")) {
             Write-Host "Downloading setup configuration..."
-            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile "setup.py"
+            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py" -OutFile "setup.py"
           } else {
             Write-Host "Setup configuration already exists. Skipping download."
           }
@@ -52,7 +52,7 @@ jobs:
           # Проверяем наличие show.bat
           if (-not (Test-Path "show.bat")) {
             Write-Host "Downloading show.bat..."
-            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile "show.bat"
+            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat" -OutFile "show.bat"
           } else {
             Write-Host "show.bat already exists. Skipping download."
           }
