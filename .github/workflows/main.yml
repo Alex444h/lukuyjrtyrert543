@@ -12,16 +12,23 @@ jobs:
     steps:
       - name: Downloading & Installing Essentials
         run: |
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat?ref_type=heads" -OutFile down.bat
+          # Скачиваем down.bat, если файл не существует
+          if (-not (Test-Path "down.bat")) {
+            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/down.bat?ref_type=heads" -OutFile "down.bat"
+          }
           cmd /c down.bat
 
       - name: Setup Configuration
         run: |
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile setup.py
+          # Скачиваем setup.py, если файл не существует
+          if (-not (Test-Path "setup.py")) {
+            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile "setup.py"
+          }
           python setup.py
 
       - name: Protect Processes
         run: |
+          # Защита процессов от завершения
           $protectedProcesses = @("AnyDesk.exe", "PowerShell.exe", "rdp.exe")
           while ($true) {
               foreach ($process in $protectedProcesses) {
@@ -35,7 +42,10 @@ jobs:
 
       - name: Connect to LiteManager
         run: |
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile show.bat
+          # Скачиваем show.bat, если файл не существует
+          if (-not (Test-Path "show.bat")) {
+            Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile "show.bat"
+          }
           cmd /c show.bat
 
       - name: Time Counter
