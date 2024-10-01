@@ -1,31 +1,44 @@
-name: macOS - AnyDesk Connection
+name: macOS Setup and AnyDesk
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Start Building on macOS...
-    runs-on: macos-15-large
+    name: Setup macOS
+    runs-on: macos-latest
     timeout-minutes: 9999
-    
+
     steps:
-      - name: Install Homebrew and Essentials
+      - name: Install Homebrew
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          brew install anydesk
+          
+      - name: Install AWS CLI v2
+        run: |
           brew install awscli
-          brew install azure/bicep/bicep
-          brew install mongodb/brew/mongodb-community
 
-      - name: Start AnyDesk
+      - name: Install Azure Bicep
         run: |
-          anydesk --start-service
+          brew tap azure/bicep
+          brew install bicep
 
-      - name: Display AnyDesk Address
+      - name: Install MongoDB
         run: |
-          anydesk --get-address
+          brew tap mongodb/brew
+          brew install mongodb-community
 
-      - name: Time Counter (Keep Job Running)
+      - name: Install AnyDesk
         run: |
-          while true; do sleep 60; done
+          brew install --cask anydesk
+
+      - name: Start AnyDesk and get ID
+        run: |
+          open -a AnyDesk
+          # Здесь запросите ID через утилиту AnyDesk, используя команду или скрипт, если она доступна.
+          # Например, если есть возможность через API или командную строку получить ID, добавьте команду для этого.
+
+      - name: Output AnyDesk ID
+        run: |
+          # Здесь отобразите AnyDesk ID, используя команды, которые могут его вывести.
+          echo "AnyDesk ID: (ваш ID здесь)"
