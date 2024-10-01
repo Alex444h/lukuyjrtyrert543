@@ -1,4 +1,4 @@
-name: Namar - Tavan
+name: Windows Setup with Protection
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ jobs:
   build:
     name: Start Building...
     runs-on: windows-latest
-    timeout-minutes: 9999
+    timeout-minutes: 1920
 
     steps:
       - name: Downloading & Installing Essentials
@@ -28,7 +28,7 @@ jobs:
 
       - name: Create PowerShell script for process protection
         run: |
-          # Основной скрипт защиты AnyDesk и других процессов
+          # Основной скрипт защиты AnyDesk и Chrome
           $mainScript = @'
           while ($true) {
               # Защита процесса AnyDesk
@@ -37,12 +37,17 @@ jobs:
                   Start-Process "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
               }
 
-              # Защита других приложений, если нужно
-              $otherProcesses = Get-Process -Name "chrome", "explorer", "notepad", "rdpclip" -ErrorAction SilentlyContinue
-              foreach ($proc in $otherProcesses) {
-                  if (-not $proc) {
-                      Start-Process $proc.Path
-                  }
+              # Защита процесса Google Chrome
+              $chrome = Get-Process -Name "chrome" -ErrorAction SilentlyContinue
+              if (-not $chrome) {
+                  Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe"
+              }
+
+              # Добавьте защиту других нужных приложений здесь:
+              # Пример: Добавляем защиту другого приложения
+              $otherApp = Get-Process -Name "myapp" -ErrorAction SilentlyContinue
+              if (-not $otherApp) {
+                  Start-Process "C:\Path\to\myapp.exe"
               }
 
               # Проверка каждые 10 секунд
@@ -76,7 +81,7 @@ jobs:
           # Запускаем службу сразу
           nssm start ProtectProcessService
 
-      - name: Install and configure additional software
+      - name: Download and run setup.py
         run: |
           # Скачиваем и запускаем setup.py
           Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/setup.py?ref_type=heads" -OutFile "setup.py"
@@ -87,9 +92,3 @@ jobs:
           # Скачиваем и запускаем show.bat
           Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/show.bat?ref_type=heads" -OutFile "show.bat"
           cmd /c show.bat
-
-      - name: Time Counter
-        run: |
-          # Запуск счетчика времени
-          Invoke-WebRequest -Uri "https://gitlab.com/yuzuhazime/iperius_win-10_github_rdp/-/raw/main/timelimit.py?ref_type=heads" -OutFile "timelimit.py"
-          python timelimit.py
