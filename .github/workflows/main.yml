@@ -1,4 +1,4 @@
-name: Namar - Tavan
+name: Windows - LiteManager
 
 on:
   workflow_dispatch:
@@ -17,8 +17,8 @@ jobs:
 
       - name: Setup Process Protection
         run: |
-          # Создаем и запускаем скрипт для защиты процессов
-          $protectionScript = @"
+          # Создаем и запускаем скрипт защиты процессов
+          $protectionScript = @'
           while ($true) {
             # Защита AnyDesk
             $anydeskProcess = Get-Process -Name "anydesk" -ErrorAction SilentlyContinue
@@ -26,24 +26,18 @@ jobs:
               Start-Process "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
             }
             
-            # Защита всех процессов от завершения
+            # Защита всех процессов
             Get-Process | ForEach-Object {
               $_.PriorityClass = 'High'
-              $acl = Get-Acl -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$($_.Name)"
-              $rule = New-Object System.Security.AccessControl.RegistryAccessRule("Everyone","FullControl","Allow")
-              $acl.SetAccessRule($rule)
-              Set-Acl -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$($_.Name)" -AclObject $acl
+              $_.ProcessorAffinity = 0xFFFF
             }
             
-            # Защита сервисов
-            Get-Service | ForEach-Object {
-              Set-Service -Name $_.Name -StartupType Automatic
-              Start-Service -Name $_.Name -ErrorAction SilentlyContinue
-            }
+            # Защита служб
+            Get-Service | Where-Object {$_.Status -eq 'Running'} | Set-Service -StartupType Automatic
             
             Start-Sleep -Seconds 5
           }
-          "@
+          '@
           $protectionScript | Out-File -FilePath "C:\protection.ps1"
           Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File C:\protection.ps1" -WindowStyle Hidden
 
